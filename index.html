@@ -220,8 +220,9 @@ nav svg{width:22px;height:22px}
 
     <div class="card">
       <h2>Eventos durante la parada</h2>
+      <p class="hint" style="margin:-4px 0 12px">Marca <b>Sí</b> solo si ocurrió durante esta parada. Si no pasó, deja <b>No</b> (viene marcado por defecto).</p>
       <div class="list" id="eventos"></div>
-      <p class="hint">Solo los ven los supervisores y Casa Matriz. No cambian el puntaje.</p>
+      <p class="hint">Esta información solo la ven los supervisores y Casa Matriz. No cambia el puntaje, pero queda en la ficha, el Excel y el informe.</p>
     </div>
 
     <button class="primary" id="btnEnviar">Enviar evaluación</button>
@@ -352,7 +353,12 @@ const ACRED = [
   ['Manejo de sustancias peligrosas','HAZMAT'],['Inducción del mandante','Vigente'],
 ];
 const critKey=(c,it)=>c.name+' · '+it[0];
-const EVENTOS = [['renuncia','Renuncia voluntaria'],['policlinico','Visita al policlínico'],['bajada','Bajada anticipada']];
+// [clave, nombre corto (informes), pregunta al evaluador, qué anotar en el detalle]
+const EVENTOS = [
+  ['renuncia','Renuncia voluntaria','¿El trabajador renunció por decisión propia antes de terminar la parada?','Anota la fecha y el motivo que informó.'],
+  ['policlinico','Visita al policlínico','¿Tuvo que ir al policlínico durante la parada?','Anota la fecha y si volvió a trabajar. No escribas diagnósticos.'],
+  ['bajada','Bajada anticipada','¿Bajó de la faena antes de terminar la parada (permiso, sanción, término de contrato u otro)?','Anota la fecha y el motivo de la bajada.'],
+];
 const eventosDe=e=>{const x=(e.notas||{}).__eventos||{};return EVENTOS.filter(([k])=>x[k]&&x[k].si).map(([k,n])=>({k,n,det:x[k].det||''}))};
 
 /* ================== UTILIDADES ================== */
@@ -416,8 +422,8 @@ function renderRes(){
   $('rAlert').classList.toggle('hidden',!r.alerta);
 }
 function renderEventos(){
-  $('eventos').innerHTML=EVENTOS.map(([k,n])=>{const v=state.eventos[k]||{};return `<div class="row"><div class="info"><div class="t">${n}</div>
-    ${v.si?`<input class="inp" data-det="${k}" placeholder="Detalle: fecha, motivo…" value="${esc(v.det||'')}" style="margin-top:8px">`:''}</div>
+  $('eventos').innerHTML=EVENTOS.map(([k,n,preg,ayuda])=>{const v=state.eventos[k]||{};return `<div class="row"><div class="info"><div class="t">${n}</div><div class="s" style="color:var(--ink2);font-size:14px">${preg}</div>
+    ${v.si?`<label class="f" style="margin-top:10px" for="det_${k}">Detalle: ${ayuda}</label><input class="inp" id="det_${k}" data-det="${k}" placeholder="Ej: 12-11-2026, …" value="${esc(v.det||'')}">`:''}</div>
     <div class="seg" style="flex:0 0 auto"><button data-ev="${k}" data-v="0" class="${v.si?'':'on'}" style="flex:0 0 64px">No</button><button data-ev="${k}" data-v="1" class="${v.si?'on':''}" style="flex:0 0 64px">Sí</button></div></div>`}).join('');
 }
 $('eventos').addEventListener('click',e=>{const b=e.target.closest('button[data-ev]');if(!b)return;const k=b.dataset.ev;

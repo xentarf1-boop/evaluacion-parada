@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Evaluación Parada</title>
+<meta name="theme-color" content="#111827">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Evaluación Parada">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#111827; --ink2:#374151; --muted:#6B7280; --line:#E3E6EA; --bg:#EEF0F3; --card:#fff; --field:#E9EBEE;
+  --yellow:#F5B400; --green:#15803D; --greenbg:#DCFCE7; --amber:#B45309; --amberbg:#FEF3C7;
+  --red:#B91C1C; --redbg:#FEE2E2; --blue:#1D4ED8; --bluebg:#DBEAFE; --graybg:#E5E7EB;
+  --r:12px; --head:"Barlow Condensed",system-ui,sans-serif; --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 14px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:repeating-linear-gradient(-45deg,var(--yellow) 0 14px,var(--ink) 14px 28px)}
+.hwrap{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kicker{font-family:var(--head);font-weight:700;font-size:13px;letter-spacing:.08em;color:var(--yellow);text-transform:uppercase}
+h1{font-family:var(--head);font-weight:800;font-size:26px;margin:0;line-height:1;text-transform:uppercase}
+.hbtn{background:transparent;border:1.5px solid #9CA3AF;color:#fff;border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+main{max-width:960px;margin:0 auto;padding:22px 16px 16px}
+.banner{border-radius:10px;padding:9px 12px;font-size:14px;margin-bottom:12px;font-weight:600;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.banner.demo{background:var(--amberbg);color:var(--amber)}
+.banner.edit{background:var(--bluebg);color:var(--blue)}
+.banner button{background:#fff;border:0;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer;color:inherit}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.card h2{font-family:var(--head);font-weight:700;font-size:20px;text-transform:uppercase;margin:0 0 12px;letter-spacing:.01em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.span2{grid-column:span 2}
+label.f{display:block;font-size:13px;color:var(--ink2);margin-bottom:5px;font-weight:500}
+.inp{width:100%;background:var(--field);border:1.5px solid transparent;border-radius:9px;padding:11px 12px;outline:none;min-height:44px}
+.inp:focus{border-color:var(--ink);background:#fff}
+.inp.err{border-color:var(--red);background:#fff}
+textarea.inp{min-height:76px;resize:vertical}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:14px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip .n{font-size:11px;background:var(--graybg);color:var(--ink2);border-radius:999px;padding:1px 7px}
+.chip.on .n{background:var(--yellow);color:var(--ink)}
+.chip .n.full{background:var(--greenbg);color:var(--green)}
+.progress{height:6px;background:var(--graybg);border-radius:9px;overflow:hidden;margin:2px 0 12px}
+.progress i{display:block;height:100%;background:var(--yellow);width:0;transition:width .25s}
+.list{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.row:last-child{border-bottom:0}
+.row .t{font-family:var(--head);font-weight:700;font-size:17px;text-transform:uppercase;line-height:1.15}
+.row .s{font-size:13px;color:var(--muted);margin-top:2px}
+.row .info{flex:1 1 260px;min-width:0}
+.scale{display:flex;gap:5px}
+.scale button{width:40px;height:40px;border-radius:9px;border:1.5px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
+.scale button.na{width:46px;font-size:12px;color:var(--muted)}
+.scale button.on{color:#fff}
+.scale button.on.v1,.scale button.on.v2{background:var(--red);border-color:var(--red)}
+.scale button.on.v3{background:var(--amber);border-color:var(--amber)}
+.scale button.on.v4,.scale button.on.v5{background:var(--green);border-color:var(--green)}
+.scale button.on.na{background:var(--graybg);color:var(--ink);border-color:var(--graybg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-bottom:10px}
+.legend b{color:var(--ink)}
+.tog{min-width:44px;height:40px;border-radius:9px;border:0;background:var(--ink);color:#fff;font-weight:800;font-size:20px;cursor:pointer;padding:0 12px}
+.tog.on{background:var(--green);font-size:15px}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:6px;padding:4px 9px;white-space:nowrap}
+.tag.g{background:var(--greenbg);color:var(--green)} .tag.a{background:var(--amberbg);color:var(--amber)}
+.tag.r{background:var(--redbg);color:var(--red)} .tag.b{background:var(--bluebg);color:var(--blue)} .tag.x{background:var(--graybg);color:var(--ink2)}
+.res{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center}
+.big{text-align:center;border-radius:12px;background:var(--ink);color:#fff;padding:14px 8px}
+.big .p{font-family:var(--head);font-weight:800;font-size:46px;line-height:1}
+.big .l{font-size:12px;color:#D1D5DB;margin-top:4px}
+.bars .b{display:grid;grid-template-columns:130px 1fr 44px;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.bars .track{height:10px;background:var(--graybg);border-radius:9px;overflow:hidden}
+.bars .track i{display:block;height:100%;border-radius:9px}
+.bars .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.alert{background:var(--redbg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1 1 120px;min-height:44px;border-radius:9px;border:1.5px solid var(--line);background:#fff;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.primary{width:100%;min-height:52px;border:0;border-radius:11px;background:var(--yellow);color:var(--ink);font-family:var(--head);font-weight:800;font-size:20px;text-transform:uppercase;cursor:pointer;letter-spacing:.02em}
+.primary:disabled{opacity:.6}
+.ghost{min-height:42px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:600;padding:0 14px;cursor:pointer;white-space:nowrap}
+.dark{min-height:42px;border-radius:10px;border:0;background:var(--ink);color:#fff;font-weight:600;padding:0 16px;cursor:pointer;white-space:nowrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--line);padding:8px 16px calc(8px + env(safe-area-inset-bottom))}
+nav .w{max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+nav button{border:0;background:transparent;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer}
+nav button.on{background:var(--field);color:var(--ink)}
+nav svg{width:22px;height:22px}
+.ev{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+.ev:last-child{border-bottom:0}
+.ev .t{font-family:var(--head);font-weight:700;font-size:17px;text-transform:uppercase}
+.ev .s{font-size:13px;color:var(--muted)}
+.ev .r{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ev .pct{font-family:var(--head);font-weight:800;font-size:22px}
+.xbtn{border:0;background:var(--graybg);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;color:var(--ink2)}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .v{font-family:var(--head);font-weight:800;font-size:30px;line-height:1}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:4px}
+.filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.empty{padding:26px 14px;text-align:center;color:var(--muted)}
+.ptabs{margin-bottom:12px}
+.modal{position:fixed;inset:0;background:rgba(17,24,39,.6);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal.open{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:90vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet h3{font-family:var(--head);font-weight:800;font-size:22px;text-transform:uppercase;margin:0 0 10px}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.dl dt{color:var(--muted)} .dl dd{margin:0;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;display:none;max-width:90vw}
+.install{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:30;background:var(--ink);color:#fff;border-radius:12px;padding:12px 14px;display:none;align-items:center;gap:10px;max-width:640px;margin:0 auto}
+.install span{flex:1;font-size:14px}
+.install .yb{background:var(--yellow);color:var(--ink);border:0;border-radius:8px;font-weight:700;padding:9px 14px;cursor:pointer}
+.install .x{background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer}
+.hidden{display:none!important}
+#print{display:none}
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr}.span2{grid-column:auto}
+  .res{grid-template-columns:1fr}
+  .bars .b{grid-template-columns:100px 1fr 40px}
+  .kpis{grid-template-columns:repeat(2,1fr)} .kpis .kpi:first-child{grid-column:span 2}
+  .filters{grid-template-columns:1fr 1fr}.filters .inp:first-child{grid-column:span 2}
+  h1{font-size:22px}
+  .scale button{width:36px;height:40px}.scale button.na{width:42px}
+}
+/* ====== FORMATO IMPRESIÓN (registro de prevención) ====== */
+@media print{
+  @page{size:letter;margin:12mm}
+  body{background:#fff;padding:0;font-size:11px}
+  body>*:not(#print){display:none!important}
+  #print{display:block;color:#000;font-family:Arial,Helvetica,sans-serif}
+}
+#print table{width:100%;border-collapse:collapse;margin:0 0 8px}
+#print th,#print td{border:1px solid #000;padding:4px 6px;font-size:10.5px;vertical-align:top;text-align:left}
+#print th{background:#D9D9D9;font-weight:700}
+#print .doc td{vertical-align:middle}
+#print .tit{font-size:14px;font-weight:700;text-align:center}
+#print .sec{background:#111827;color:#fff;font-weight:700;font-size:11px;padding:4px 6px;margin:8px 0 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#print .c{text-align:center}
+#print .firmas td{height:58px;vertical-align:bottom;text-align:center;font-size:10px}
+#print .pb{page-break-after:always}
+#print th,#print .sec{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div><div class="kicker">Parada de planta · Aseo industrial</div><h1 id="htitle">Evaluación de personal</h1></div>
+    <button class="hbtn" id="btnSup">Ingresar</button>
+  </div>
+</header>
+
+<main>
+  <div id="demoBanner" class="banner demo hidden">Modo demo: los datos se guardan solo en este equipo. Conecta Google Sheets (API_URL) para compartirlos.</div>
+
+  <!-- ============ EVALUAR ============ -->
+  <section id="vEvaluar">
+    <div id="editBanner" class="banner edit hidden"><span id="editTxt">Modificando evaluación</span><button id="btnCancelEdit">Cancelar</button></div>
+    <div class="card">
+      <h2>Evaluador</h2>
+      <div class="grid">
+        <div><label class="f" for="evNombre">Nombre del evaluador</label><input class="inp" id="evNombre" placeholder="Supervisor / capataz"></div>
+        <div><label class="f" for="parada">Parada</label><input class="inp" id="parada" list="dlParada" placeholder="Ej: Parada Molienda Nov-2026"><datalist id="dlParada"></datalist></div>
+        <div><label class="f" for="fecha">Fecha</label><input class="inp" id="fecha" type="date"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Trabajador</h2>
+      <div class="grid">
+        <div><label class="f" for="rut">RUT</label><input class="inp" id="rut" list="dlRut" autocomplete="off" placeholder="12.345.678-9"><datalist id="dlRut"></datalist></div>
+        <div><label class="f" for="nombre">Nombre y apellido</label><input class="inp" id="nombre" list="dlNom" autocomplete="off" placeholder="Busca en la nómina"><datalist id="dlNom"></datalist></div>
+        <div><label class="f" for="turno">Turno</label>
+          <select class="inp" id="turno"><option>Turno A</option><option>Turno B</option><option>Turno C</option><option>Día</option><option>Noche</option></select></div>
+        <div><label class="f" for="cargo">Cargo</label>
+          <select class="inp" id="cargo"><option value="">Selecciona…</option><option>Operador hidrojet</option><option>Operador camión vactor</option><option>Ayudante aseo industrial</option><option>Capataz</option><option>Rigger</option><option>Conductor</option><option>Otro</option></select></div>
+        <div><label class="f" for="area">Área o faena</label><input class="inp" id="area" placeholder="Ej: Chancado, Flotación"></div>
+        <div><label class="f" for="empresa">Empresa</label><input class="inp" id="empresa" placeholder="Opcional"></div>
+      </div>
+      <p class="hint">Escribe el RUT o el nombre y completamos sus datos desde la nómina.</p>
+    </div>
+
+    <div class="card">
+      <h2>Evaluación</h2>
+      <div class="chips" id="chips"></div>
+      <div class="progress"><i id="prog"></i></div>
+      <div class="legend" id="legend"><span><b>1</b> Deficiente</span><span><b>2</b> Insuficiente</span><span><b>3</b> Aceptable</span><span><b>4</b> Bueno</span><span><b>5</b> Excelente</span><span><b>N/A</b> No aplica</span></div>
+      <div class="list" id="crit"></div>
+    </div>
+
+    <div class="card">
+      <h2>Resultado</h2>
+      <div class="res">
+        <div class="big"><div class="p" id="rPct">–</div><div class="l">Puntaje final</div><div style="margin-top:8px" id="rTag"><span class="tag x">Sin datos</span></div></div>
+        <div class="bars" id="rBars"></div>
+      </div>
+      <div class="alert hidden" id="rAlert">Alerta de seguridad: uno o más criterios de seguridad con nota 1 o 2. La clasificación queda limitada a «Requiere refuerzo» y se notifica a la línea de mando.</div>
+    </div>
+
+    <div class="card">
+      <h2>Recomendación</h2>
+      <label class="f">¿Lo recomiendas para la próxima parada?</label>
+      <div class="seg" id="recom"><button data-v="Sí">Sí</button><button data-v="Con observaciones">Con observaciones</button><button data-v="No">No</button></div>
+      <div class="grid" style="margin-top:12px">
+        <div><label class="f" for="fort">Fortalezas</label><textarea class="inp" id="fort" placeholder="Lo que hace bien"></textarea></div>
+        <div class="span2"><label class="f" for="mejora">Aspectos a mejorar / capacitación sugerida</label><textarea class="inp" id="mejora" placeholder="Ej: reforzar procedimiento de bloqueo"></textarea></div>
+      </div>
+    </div>
+
+    <button class="primary" id="btnEnviar">Enviar evaluación</button>
+  </section>
+
+  <!-- ============ MIS EVALUACIONES ============ -->
+  <section id="vMis" class="hidden">
+    <div class="card">
+      <h2>Mis evaluaciones</h2>
+      <div style="display:flex;gap:10px">
+        <input class="inp" id="misRut" placeholder="RUT: 12.345.678-9">
+        <button class="dark" id="btnMis">Buscar</button>
+      </div>
+      <p class="hint">Consulta los resultados de evaluaciones en paradas de planta.</p>
+    </div>
+    <div class="card" style="padding:0"><div id="misList"><div class="empty">Ingresa un RUT para ver evaluaciones.</div></div></div>
+  </section>
+
+  <!-- ============ PANEL SUPERVISOR ============ -->
+  <section id="vPanel" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-family:var(--head);font-weight:800;font-size:22px;text-transform:uppercase"><span id="panelTit">Panel supervisor</span> <span id="supName" style="color:var(--muted)"></span></div>
+      <div class="btns"><button class="ghost" id="btnRefresh">Actualizar</button><button class="dark" id="btnXlsx">Descargar Excel</button><button class="dark" id="btnInforme">Informe línea de mando</button><button class="ghost" id="btnSalir">Salir</button></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="chips ptabs" id="ptabs">
+      <button class="chip on" data-t="ev">Evaluaciones</button>
+      <button class="chip" data-t="pend">Pendientes por evaluar <span class="n" id="nPend">0</span></button>
+      <button class="chip" data-t="nom">Nómina <span class="n" id="nNom">0</span></button>
+    </div>
+
+    <div id="tEv">
+      <div class="card"><h2>Promedio del equipo por área</h2><div class="bars" id="teamBars"></div></div>
+      <div class="filters">
+        <input class="inp" id="fq" placeholder="Buscar: nombre, RUT, área…">
+        <select class="inp" id="fParada"><option value="">Todas las paradas</option></select>
+        <select class="inp" id="fCargo"><option value="">Todos los cargos</option></select>
+        <select class="inp" id="fClase"><option value="">Todas las clases</option><option>Destacado</option><option>Competente</option><option>Requiere refuerzo</option><option>No recomendado</option></select>
+      </div>
+      <div class="card" style="padding:0"><div id="panelList"></div></div>
+    </div>
+
+    <div id="tPend" class="hidden">
+      <div class="card">
+        <h2>Pendientes por evaluar</h2>
+        <label class="f" for="pParada">Parada</label>
+        <input class="inp" id="pParada" list="dlParada" placeholder="Nombre de la parada">
+        <p class="hint">Trabajadores de la nómina que aún no tienen evaluación en esta parada.</p>
+      </div>
+      <div class="card" style="padding:0"><div id="pendList"></div></div>
+    </div>
+
+    <div id="tNom" class="hidden">
+      <div class="card">
+        <h2>Nómina de personal</h2>
+        <div class="btns">
+          <button class="dark" id="btnImport" data-sup>Importar Excel</button>
+          <button class="ghost" id="btnPlantilla">Descargar plantilla</button>
+          <button class="ghost" id="btnAddPers" data-sup>+ Agregar trabajador</button>
+        </div>
+        <input type="file" id="fileNom" accept=".xlsx,.xls,.csv" class="hidden">
+        <p class="hint">Columnas: RUT, Nombre, Cargo, Turno, Área, Empresa. Si el RUT ya existe, se actualizan sus datos.</p>
+      </div>
+      <input class="inp" id="nq" placeholder="Buscar en la nómina…" style="margin-bottom:12px">
+      <div class="card" style="padding:0"><div id="nomList"></div></div>
+    </div>
+  </section>
+</main>
+
+<nav><div class="w">
+  <button id="nEvaluar" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Evaluar</button>
+  <button id="nMis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Mis evaluaciones</button>
+</div></nav>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<div class="install" id="install"><span>Instala la app en tu celular para abrirla con un toque.</span><button class="yb" id="btnInstall">Instalar</button><button class="x" id="btnInstallX" aria-label="Cerrar">×</button></div>
+<div id="print"></div>
+
+<script>
+/* ================== CONFIGURACIÓN ==================
+   API_URL: pega la URL de tu implementación de Google Apps Script (termina en /exec).
+   Si queda vacía, la app funciona en MODO DEMO guardando solo en este equipo. */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzi-jDNUbsQ2RiuUfPYs_NE4VNu7vgWUJbcEYWJBwhFSazuxoanr7oDa4DWztcl_r_z/exec';
+const SUP_DEMO = {'1234':'Supervisor demo'}, MATRIZ_DEMO = {'999999':'Casa Matriz demo'}; // solo modo demo; en producción cada supervisor tiene su PIN en la hoja «Supervisores»
+const EMPRESA = 'Grupo Imperial';  // aparece en los registros impresos
+const DOC_CODIGO = 'REG-PRV-EVP-01';
+const DOC_VERSION = '01';
+
+/* ================== CRITERIOS ================== */
+const CATS = [
+  {id:'seg', name:'Seguridad', peso:30, items:[
+    ['Uso correcto de EPP','Casco, lentes, guantes, protección respiratoria y auditiva según la tarea'],
+    ['ART / AST y charla de inicio','Participa y aplica el análisis de riesgo antes del trabajo'],
+    ['Bloqueo y tarjeteo (LOTO)','Aplica aislación de energías y verifica energía cero'],
+    ['Espacio confinado y altura','Respeta permisos, vigía, medición de gases y arnés'],
+    ['Orden y segregación del área','Delimita el área, mantiene accesos y vías despejadas'],
+    ['Reporte de incidentes','Informa condiciones y acciones subestándar a tiempo'],
+  ]},
+  {id:'tec', name:'Habilidades técnicas', peso:30, items:[
+    ['Hidrolavado alta presión (hidrojet)','Manejo seguro de pistola, lanzas, mangueras y presión'],
+    ['Camión aspirador / vactor','Operación de succión, mangueras y descarga'],
+    ['Limpieza de equipos','Chutes, harneros, celdas, estanques, correas y pozos'],
+    ['Manejo de residuos','Clasificación, retiro y disposición de RISES / lodos'],
+    ['Herramientas y equipos','Uso, inspección y cuidado de herramientas'],
+    ['Conocimiento del procedimiento','Conoce el instructivo y la secuencia del trabajo'],
+  ]},
+  {id:'des', name:'Desempeño', peso:25, items:[
+    ['Cumplimiento de plazos','Termina las tareas dentro de la ventana de parada'],
+    ['Calidad del aseo','El equipo queda limpio y recibido sin observaciones'],
+    ['Productividad','Rendimiento y ritmo de trabajo durante el turno'],
+    ['Autonomía','Resuelve sin supervisión constante'],
+    ['Entrega del área','Deja el área limpia, ordenada y sin residuos'],
+  ]},
+  {id:'con', name:'Conducta', peso:15, items:[
+    ['Trabajo en equipo','Colabora con su cuadrilla y otras especialidades'],
+    ['Puntualidad y asistencia','Llega a la hora y cumple el turno completo'],
+    ['Actitud y disposición','Buena disposición frente a cambios y tareas extra'],
+    ['Comunicación','Informa avance y problemas al supervisor'],
+    ['Normas del mandante','Respeta reglamentos y normas de la faena'],
+  ]},
+];
+const ACRED = [
+  ['Operador hidrojet certificado','Alta presión'],['Operador camión vactor','Succión'],
+  ['Espacio confinado','Curso vigente'],['Trabajo en altura','Curso vigente'],
+  ['Bloqueo y tarjeteo (LOTO)','Curso vigente'],['Rigger / señalero','Izaje'],
+  ['Licencia de conducir profesional','Clase A / D'],['Primeros auxilios','Curso vigente'],
+  ['Manejo de sustancias peligrosas','HAZMAT'],['Inducción del mandante','Vigente'],
+];
+const critKey=(c,it)=>c.name+' · '+it[0];
+
+/* ================== UTILIDADES ================== */
+const $ = id => document.getElementById(id);
+let state = {cat:'seg', notas:{}, acred:{}, recom:'', editId:null, editOrig:null};
+let panelData=[], panelPin='', supNombre='', rol='', nomina=[], ptab='ev';
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(m,ms=2800){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',ms)}
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const hoy=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+function num(v){return v===''||v==null?null:+v}
+function fmtFecha(f){if(!f)return '';const s=String(f).slice(0,10).split('-');return s.length===3?`${s[2]}-${s[1]}-${s[0]}`:f}
+const isAlerta=e=>e.alerta===true||e.alerta==='SI'||e.alerta==='Sí';
+const acredList=e=>Array.isArray(e.acred)?e.acred:String(e.acred||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+/* ================== RUT ================== */
+function rutClean(r){return String(r||'').replace(/[^0-9kK]/g,'').toUpperCase()}
+function rutFormat(r){const c=rutClean(r);if(c.length<2)return c;const b=c.slice(0,-1),d=c.slice(-1);return b.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+'-'+d}
+function rutValid(r){const c=rutClean(r);if(c.length<8)return false;const b=c.slice(0,-1),d=c.slice(-1);let s=0,m=2;for(let i=b.length-1;i>=0;i--){s+=+b[i]*m;m=m===7?2:m+1}const v=11-(s%11);return d===(v===11?'0':v===10?'K':String(v))}
+
+/* ================== PUNTAJE ================== */
+function calc(notas){
+  let tot=0,peso=0,alerta=false;const cats={};
+  CATS.forEach(c=>{const v=c.items.map((_,i)=>notas[c.id+i]).filter(x=>typeof x==='number');
+    if(c.id==='seg'&&v.some(x=>x<=2))alerta=true;
+    if(v.length){const avg=v.reduce((a,b)=>a+b,0)/v.length;cats[c.id]=Math.round(avg/5*100);tot+=avg/5*100*c.peso;peso+=c.peso}else cats[c.id]=null});
+  const pct=peso?Math.round(tot/peso):null;
+  let clase=pct==null?'':pct>=85?'Destacado':pct>=70?'Competente':pct>=55?'Requiere refuerzo':'No recomendado';
+  if(alerta&&(clase==='Destacado'||clase==='Competente'))clase='Requiere refuerzo';
+  return {pct,clase,alerta,cats};
+}
+function claseTag(c){const m={'Destacado':'g','Competente':'b','Requiere refuerzo':'a','No recomendado':'r'};return c?`<span class="tag ${m[c]||'x'}">${esc(c)}</span>`:'<span class="tag x">Sin datos</span>'}
+function barColor(p){return p==null?'var(--graybg)':p>=85?'var(--green)':p>=70?'var(--blue)':p>=55?'var(--amber)':'var(--red)'}
+function barsHtml(cats){return CATS.map(c=>{const p=cats[c.id];return `<div class="b"><span>${c.name}</span><div class="track"><i style="width:${p||0}%;background:${barColor(p)}"></i></div><span class="v">${p==null?'–':p+'%'}</span></div>`}).join('')}
+
+/* ================== RENDER EVALUACIÓN ================== */
+function renderChips(){
+  const all=[...CATS.map(c=>({id:c.id,name:c.name,n:c.items.filter((_,i)=>state.notas[c.id+i]!==undefined).length,t:c.items.length})),
+    {id:'acr',name:'Acreditaciones',n:Object.values(state.acred).filter(Boolean).length,t:null}];
+  $('chips').innerHTML=all.map(c=>`<button class="chip ${state.cat===c.id?'on':''}" data-c="${c.id}">${c.name}<span class="n ${c.t&&c.n===c.t?'full':''}">${c.t?c.n+'/'+c.t:c.n}</span></button>`).join('');
+  const total=CATS.reduce((a,c)=>a+c.items.length,0), done=Object.keys(state.notas).length;
+  $('prog').style.width=(done/total*100)+'%';
+}
+function renderCrit(){
+  $('legend').classList.toggle('hidden',state.cat==='acr');
+  if(state.cat==='acr'){
+    $('crit').innerHTML=ACRED.map((a,i)=>`<div class="row"><div class="info"><div class="t">${a[0]}</div><div class="s">${a[1]}</div></div>
+      <button class="tog ${state.acred[i]?'on':''}" data-a="${i}">${state.acred[i]?'✓ Tiene':'+'}</button></div>`).join('');
+    return;
+  }
+  const c=CATS.find(x=>x.id===state.cat);
+  $('crit').innerHTML=c.items.map((it,i)=>{const k=c.id+i,v=state.notas[k];
+    return `<div class="row"><div class="info"><div class="t">${it[0]}</div><div class="s">${it[1]}</div></div>
+    <div class="scale">${[1,2,3,4,5].map(n=>`<button class="v${n} ${v===n?'on':''}" data-k="${k}" data-v="${n}">${n}</button>`).join('')}<button class="na ${v==='NA'?'on':''}" data-k="${k}" data-v="NA">N/A</button></div></div>`}).join('');
+}
+function renderRes(){
+  const r=calc(state.notas);
+  $('rPct').textContent=r.pct==null?'–':r.pct+'%';
+  $('rTag').innerHTML=claseTag(r.clase);
+  $('rBars').innerHTML=barsHtml(r.cats);
+  $('rAlert').classList.toggle('hidden',!r.alerta);
+}
+function renderAll(){renderChips();renderCrit();renderRes();
+  document.querySelectorAll('#recom button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.recom));
+  $('editBanner').classList.toggle('hidden',!state.editId);
+  $('btnEnviar').textContent=state.editId?'Guardar cambios':'Enviar evaluación';
+}
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;state.cat=b.dataset.c;renderChips();renderCrit()};
+$('crit').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.a!==undefined){const i=b.dataset.a;state.acred[i]=!state.acred[i];renderChips();renderCrit();return}
+  const k=b.dataset.k,v=b.dataset.v==='NA'?'NA':+b.dataset.v;
+  if(state.notas[k]===v)delete state.notas[k];else state.notas[k]=v;
+  renderChips();renderCrit();renderRes();
+  const c=CATS.find(x=>x.id===state.cat);
+  if(c&&c.items.every((_,i)=>state.notas[c.id+i]!==undefined)&&!state.editId){const ix=CATS.indexOf(c);
+    setTimeout(()=>{state.cat=ix<CATS.length-1?CATS[ix+1].id:'acr';renderChips();renderCrit();$('chips').scrollIntoView({behavior:'smooth',block:'start'})},250)}
+};
+$('recom').onclick=e=>{const b=e.target.closest('button');if(!b)return;state.recom=b.dataset.v;renderAll()};
+
+/* ================== API ================== */
+async function api(action,data={}){
+  if(API_URL){
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...data})});
+    const j=await res.json(); if(!j.ok)throw new Error(j.error||'Error del servidor'); return j;
+  }
+  // ---------- modo demo local ----------
+  const db=ls.get('evp_db',[]), nom=ls.get('evp_nomina',[]);
+  const pinOk=()=>{if(!SUP_DEMO[data.pin])throw new Error('PIN incorrecto');return SUP_DEMO[data.pin]};
+  switch(action){
+    case 'nominaLista': return {ok:true,items:nom};
+    case 'persona':{const r=rutClean(data.rut);const p=nom.find(x=>rutClean(x.rut)===r)||[...db].reverse().find(x=>rutClean(x.rut)===r);return {ok:true,persona:p||null}}
+    case 'guardar':{const ev={...data.ev,id:'EV-'+Date.now().toString(36).toUpperCase()};db.push(ev);ls.set('evp_db',db);upsertNom(nom,ev);return {ok:true,id:ev.id,notificado:false}}
+    case 'actualizar':{pinOk();const i=db.findIndex(x=>x.id===data.id);if(i<0)throw new Error('Evaluación no encontrada');
+      const hist=ls.get('evp_hist',[]);hist.push({fecha:new Date().toISOString(),id:data.id,por:data.ev.modificadoPor,antes:db[i]});ls.set('evp_hist',hist);
+      db[i]={...data.ev,id:data.id,creado:db[i].creado};ls.set('evp_db',db);return {ok:true,id:data.id}}
+    case 'mis':{const r=rutClean(data.rut);return {ok:true,items:db.filter(x=>rutClean(x.rut)===r)}}
+    case 'panel': if(MATRIZ_DEMO[data.pin])return {ok:true,supervisor:MATRIZ_DEMO[data.pin],rol:'matriz',items:db,nomina:nom};return {ok:true,supervisor:pinOk(),rol:'supervisor',items:db,nomina:nom};
+    case 'nominaGuardar':{pinOk();data.items.forEach(p=>upsertNom(nom,p));return {ok:true,total:ls.get('evp_nomina',[]).length}}
+    case 'nominaBorrar':{pinOk();ls.set('evp_nomina',nom.filter(x=>rutClean(x.rut)!==rutClean(data.rut)));return {ok:true}}
+    case 'informe': if(!MATRIZ_DEMO[data.pin])pinOk(); return {ok:true,enviado:false,motivo:'En modo demo no se envían correos. Conecta Google Sheets para notificar a la línea de mando.'};
+  }
+  throw new Error('Acción desconocida');
+}
+function upsertNom(nom,p){const r=rutClean(p.rut);if(!r)return;const o={rut:rutFormat(p.rut),nombre:p.nombre||'',cargo:p.cargo||'',turno:p.turno||'',area:p.area||'',empresa:p.empresa||''};
+  const i=nom.findIndex(x=>rutClean(x.rut)===r);if(i>=0)nom[i]={...nom[i],...Object.fromEntries(Object.entries(o).filter(([k,v])=>v))};else nom.push(o);ls.set('evp_nomina',nom)}
+
+/* ================== NÓMINA EN FORMULARIO ================== */
+async function loadNomina(){try{const j=await api('nominaLista');nomina=j.items||[];fillNomLists()}catch(e){}}
+function fillNomLists(){
+  $('dlRut').innerHTML=nomina.map(p=>`<option value="${esc(p.rut)}">${esc(p.nombre)}</option>`).join('');
+  $('dlNom').innerHTML=nomina.map(p=>`<option value="${esc(p.nombre)}">${esc(p.rut)} · ${esc(p.cargo)}</option>`).join('');
+}
+function fillPersona(p){if(!p)return;if(p.rut)$('rut').value=rutFormat(p.rut);if(p.nombre)$('nombre').value=p.nombre;if(p.cargo)$('cargo').value=p.cargo;
+  if(p.turno)$('turno').value=p.turno;if(p.area)$('area').value=p.area;if(p.empresa)$('empresa').value=p.empresa}
+$('rut').addEventListener('change',async()=>{
+  const v=$('rut').value;if(!v)return;$('rut').value=rutFormat(v);
+  if(!rutValid(v)){$('rut').classList.add('err');toast('RUT no válido');return}
+  $('rut').classList.remove('err');
+  const local=nomina.find(x=>rutClean(x.rut)===rutClean(v));if(local){fillPersona(local);toast('Datos completados: '+local.nombre);return}
+  try{const j=await api('persona',{rut:v});if(j.persona){fillPersona(j.persona);toast('Datos completados: '+j.persona.nombre)}}catch(e){}
+});
+$('nombre').addEventListener('change',()=>{const n=$('nombre').value.trim().toLowerCase();const p=nomina.find(x=>String(x.nombre).toLowerCase()===n);if(p)fillPersona(p)});
+['evNombre','parada'].forEach(id=>{$(id).value=ls.get('evp_'+id,'');$(id).addEventListener('change',()=>ls.set('evp_'+id,$(id).value))});
+$('fecha').value=hoy();
+
+/* ================== ENVIAR / MODIFICAR ================== */
+function buildEv(){
+  const r=calc(state.notas);
+  return {fecha:$('fecha').value,parada:$('parada').value.trim(),evaluador:$('evNombre').value.trim(),
+    rut:rutFormat($('rut').value),nombre:$('nombre').value.trim(),cargo:$('cargo').value,turno:$('turno').value,area:$('area').value.trim(),empresa:$('empresa').value.trim(),
+    puntaje:r.pct,clase:r.clase,alerta:r.alerta,recom:state.recom,seg:r.cats.seg,tec:r.cats.tec,des:r.cats.des,con:r.cats.con,
+    acred:ACRED.filter((_,i)=>state.acred[i]).map(a=>a[0]),fortalezas:$('fort').value.trim(),mejoras:$('mejora').value.trim(),
+    notas:Object.fromEntries(CATS.flatMap(c=>c.items.map((it,i)=>[critKey(c,it),state.notas[c.id+i]??'']))),creado:new Date().toISOString()};
+}
+$('btnEnviar').onclick=async()=>{
+  const req=[['evNombre','Nombre del evaluador'],['parada','Parada'],['rut','RUT'],['nombre','Nombre del trabajador'],['cargo','Cargo']];
+  for(const [id,lbl] of req){if(!$(id).value.trim()){$(id).classList.add('err');$(id).focus();toast('Falta: '+lbl);return}$(id).classList.remove('err')}
+  if(!rutValid($('rut').value)){$('rut').classList.add('err');$('rut').focus();toast('RUT no válido');return}
+  if(!CATS[0].items.every((_,i)=>state.notas['seg'+i]!==undefined)){state.cat='seg';renderAll();$('chips').scrollIntoView({behavior:'smooth'});toast('Completa todos los criterios de Seguridad');return}
+  if(calc(state.notas).pct==null){toast('Evalúa al menos un criterio');return}
+  if(!state.recom){$('recom').scrollIntoView({behavior:'smooth',block:'center'});toast('Indica si lo recomiendas');return}
+  const ev=buildEv();
+  const btn=$('btnEnviar');btn.disabled=true;btn.textContent='Guardando…';
+  try{
+    if(state.editId){
+      ev.creado=state.editOrig.creado||ev.creado;ev.modificado=new Date().toISOString();ev.modificadoPor=supNombre||ev.evaluador;
+      await api('actualizar',{pin:panelPin,id:state.editId,ev});
+      toast('Cambios guardados');const id=state.editId;resetForm();await refreshPanel();show('panel');
+      const e=panelData.find(x=>x.id===id);if(e)openDetail(e,true);
+    }else{
+      ls.set('evp_ultimo',ev);
+      const j=await api('guardar',{ev});ev.id=j.id;
+      openSheet(`<h3>Evaluación enviada</h3><p style="margin:0 0 12px;color:var(--muted)">Folio ${esc(j.id||'')}${j.notificado?' · Notificada a la línea de mando':''}</p>${detailHtml(ev)}
+        <div class="btns" style="margin-top:16px"><button class="ghost" id="btnPdfNew">Descargar ficha PDF</button><button class="primary" id="btnNueva">Evaluar a otro trabajador</button></div>`);
+      $('btnPdfNew').onclick=()=>printDocs([ev]);
+      $('btnNueva').onclick=()=>{closeSheet();resetForm()};
+      loadNomina();
+    }
+  }catch(e){toast('No se pudo guardar: '+e.message,4000)}
+  btn.disabled=false;renderAll();
+};
+function resetForm(){['rut','nombre','area','empresa','fort','mejora'].forEach(id=>$(id).value='');$('cargo').value='';$('fecha').value=hoy();
+  $('evNombre').value=ls.get('evp_evNombre','');$('parada').value=ls.get('evp_parada','');
+  state={cat:'seg',notas:{},acred:{},recom:'',editId:null,editOrig:null};renderAll();window.scrollTo({top:0,behavior:'smooth'})}
+$('btnCancelEdit').onclick=()=>{resetForm();show('panel')};
+function loadIntoForm(e){
+  state={cat:'seg',notas:{},acred:{},recom:e.recom||'',editId:e.id,editOrig:e};
+  CATS.forEach(c=>c.items.forEach((it,i)=>{const v=(e.notas||{})[critKey(c,it)];if(v!==''&&v!=null)state.notas[c.id+i]=v==='NA'?'NA':+v}));
+  const ac=acredList(e);ACRED.forEach((a,i)=>{if(ac.includes(a[0]))state.acred[i]=true});
+  $('fecha').value=String(e.fecha||'').slice(0,10);$('parada').value=e.parada||'';$('evNombre').value=e.evaluador||'';
+  fillPersona(e);$('fort').value=e.fortalezas||'';$('mejora').value=e.mejoras||'';
+  $('editTxt').textContent=`Modificando ${e.id} · ${e.nombre}`;
+  show('evaluar');renderAll();
+}
+
+/* ================== DETALLE ================== */
+function detailHtml(e){
+  const ac=acredList(e);
+  return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div class="big" style="padding:10px 16px"><div class="p" style="font-size:34px">${e.puntaje}%</div></div><div>${claseTag(e.clase)}<div style="margin-top:6px;font-size:14px">Recomienda: <b>${esc(e.recom)}</b></div></div></div>
+  ${isAlerta(e)?'<div class="alert" style="margin:0 0 12px">Alerta de seguridad</div>':''}
+  <div class="bars">${barsHtml({seg:num(e.seg),tec:num(e.tec),des:num(e.des),con:num(e.con)})}</div>
+  <dl class="dl" style="margin-top:12px"><dt>Trabajador</dt><dd>${esc(e.nombre)} · ${esc(e.rut)}</dd><dt>Cargo</dt><dd>${esc(e.cargo)}</dd><dt>Turno / área</dt><dd>${esc(e.turno)} · ${esc(e.area||'–')}</dd>
+  <dt>Parada</dt><dd>${esc(e.parada)}</dd><dt>Fecha</dt><dd>${esc(fmtFecha(e.fecha))}</dd><dt>Evaluador</dt><dd>${esc(e.evaluador)}</dd>
+  ${e.modificado?`<dt>Modificado</dt><dd>${esc(fmtFecha(String(e.modificado).slice(0,10)))} por ${esc(e.modificadoPor||'')}</dd>`:''}
+  <dt>Acreditaciones</dt><dd>${ac.length?ac.map(esc).join(', '):'–'}</dd><dt>Fortalezas</dt><dd>${esc(e.fortalezas||'–')}</dd><dt>A mejorar</dt><dd>${esc(e.mejoras||'–')}</dd></dl>`;
+}
+function openSheet(h){$('sheet').innerHTML=h;$('modal').classList.add('open')}
+function closeSheet(){$('modal').classList.remove('open')}
+$('modal').onclick=e=>{if(e.target===$('modal'))closeSheet()};
+function openDetail(e,canEdit){
+  openSheet('<h3>Detalle</h3>'+detailHtml(e)+`<div class="btns" style="margin-top:14px">
+    <button class="ghost" id="dPdf">Descargar ficha PDF</button>${canEdit&&rol!=='matriz'?'<button class="dark" id="dEdit">Modificar</button>':''}<button class="ghost" id="dClose">Cerrar</button></div>`);
+  $('dPdf').onclick=()=>printDocs([e]);$('dClose').onclick=closeSheet;
+  if(canEdit&&$('dEdit'))$('dEdit').onclick=()=>{closeSheet();loadIntoForm(e)};
+}
+
+/* ================== MIS EVALUACIONES ================== */
+function evRow(e,i,rank){return `<div class="ev" data-i="${i}"><div><div class="t">${rank?rank+'. ':''}${esc(e.nombre)}${isAlerta(e)?' <span class="tag r">Alerta</span>':''}</div><div class="s">${esc(e.parada)} · ${esc(fmtFecha(e.fecha))} · ${esc(e.cargo)} · ${esc(e.turno)}</div></div><div class="r"><span class="pct">${e.puntaje}%</span>${claseTag(e.clase)}</div></div>`}
+let misData=[];
+$('btnMis').onclick=async()=>{
+  const v=$('misRut').value;if(!rutValid(v)){toast('RUT no válido');return}$('misRut').value=rutFormat(v);
+  $('misList').innerHTML='<div class="empty">Buscando…</div>';
+  try{const j=await api('mis',{rut:v});misData=(j.items||[]).slice().reverse();
+    $('misList').innerHTML=misData.length?misData.map((e,i)=>evRow(e,i)).join(''):'<div class="empty">No hay evaluaciones para este RUT.</div>';
+  }catch(e){$('misList').innerHTML='<div class="empty">Error: '+esc(e.message)+'</div>'}
+};
+$('misList').onclick=e=>{const r=e.target.closest('.ev');if(r)openDetail(misData[r.dataset.i],false)};
+
+/* ================== PANEL SUPERVISOR ================== */
+$('btnSup').onclick=()=>{
+  if(panelPin){show('panel');refreshPanel().catch(e=>toast(e.message));return}
+  openSheet(`<h3>Ingreso supervisor / Casa Matriz</h3><label class="f" for="pin">PIN o código de acceso</label><input class="inp" id="pin" type="password" inputmode="numeric" autocomplete="off">
+    <button class="primary" style="margin-top:14px" id="btnPin">Ingresar</button>`);
+  setTimeout(()=>$('pin').focus(),50);
+  const go=async()=>{const pin=$('pin').value;$('btnPin').disabled=true;
+    try{panelPin=pin;await refreshPanel();closeSheet();show('panel')}
+    catch(e){panelPin='';toast(e.message);$('btnPin').disabled=false}};
+  $('btnPin').onclick=go;$('pin').onkeydown=e=>{if(e.key==='Enter')go()};
+};
+async function refreshPanel(){const j=await api('panel',{pin:panelPin});panelData=j.items||[];nomina=j.nomina||nomina;supNombre=j.supervisor||'';rol=j.rol||'supervisor';applyRol();
+  if(rol==='supervisor'&&supNombre&&!$('evNombre').value){$('evNombre').value=supNombre;ls.set('evp_evNombre',supNombre)}
+  $('supName').textContent=supNombre?'· '+supNombre:'';fillNomLists();renderPanel()}
+$('btnSalir').onclick=()=>{panelPin='';supNombre='';rol='';panelData=[];if(state.editId)resetForm();show('evaluar')};
+$('btnRefresh').onclick=async()=>{try{await refreshPanel();toast('Actualizado')}catch(e){toast(e.message)}};
+['fq','fParada','fCargo','fClase'].forEach(id=>$(id).addEventListener('input',renderPanelList));
+$('pParada').addEventListener('input',renderPend);$('nq').addEventListener('input',renderNom);
+$('ptabs').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;ptab=b.dataset.t;
+  document.querySelectorAll('#ptabs .chip').forEach(c=>c.classList.toggle('on',c===b));
+  $('tEv').classList.toggle('hidden',ptab!=='ev');$('tPend').classList.toggle('hidden',ptab!=='pend');$('tNom').classList.toggle('hidden',ptab!=='nom')};
+function fillSel(id,vals,first){const cur=$(id).value;$(id).innerHTML=`<option value="">${first}</option>`+[...new Set(vals.filter(Boolean))].sort().map(v=>`<option>${esc(v)}</option>`).join('');$(id).value=cur}
+function stats(d){
+  const n=d.length,avg=n?Math.round(d.reduce((a,e)=>a+(+e.puntaje||0),0)/n):null;
+  const cnt=c=>d.filter(e=>e.clase===c).length;
+  const avgCat=id=>{const v=d.map(e=>num(e[id])).filter(x=>x!=null);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null};
+  return {n,avg,dest:cnt('Destacado'),comp:cnt('Competente'),ref:cnt('Requiere refuerzo'),norec:cnt('No recomendado'),alertas:d.filter(isAlerta).length,
+    cats:{seg:avgCat('seg'),tec:avgCat('tec'),des:avgCat('des'),con:avgCat('con')}};
+}
+function renderPanel(){
+  const s=stats(panelData);
+  $('kpis').innerHTML=[[s.n,'Evaluaciones'],[s.avg==null?'–':s.avg+'%','Promedio general'],[s.dest,'Destacados'],[s.norec,'No recomendados'],[s.alertas,'Alertas de seguridad']]
+    .map(k=>`<div class="kpi"><div class="v">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
+  $('teamBars').innerHTML=barsHtml(s.cats);
+  const paradas=panelData.map(e=>e.parada);
+  fillSel('fParada',paradas,'Todas las paradas');fillSel('fCargo',panelData.map(e=>e.cargo),'Todos los cargos');
+  $('dlParada').innerHTML=[...new Set(paradas.filter(Boolean))].map(p=>`<option value="${esc(p)}">`).join('');
+  if(!$('pParada').value)$('pParada').value=ls.get('evp_parada','')||paradas[paradas.length-1]||'';
+  renderPanelList();renderPend();renderNom();
+}
+let panelView=[];
+function renderPanelList(){
+  const q=$('fq').value.toLowerCase(),p=$('fParada').value,c=$('fCargo').value,k=$('fClase').value;
+  panelView=panelData.filter(e=>(!p||e.parada===p)&&(!c||e.cargo===c)&&(!k||e.clase===k)&&(!q||[e.nombre,e.rut,e.area,e.evaluador,e.empresa].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>(+b.puntaje)-(+a.puntaje));
+  $('panelList').innerHTML=panelView.length?panelView.map((e,i)=>evRow(e,i,i+1)).join(''):'<div class="empty">Sin evaluaciones.</div>';
+}
+$('panelList').onclick=e=>{const r=e.target.closest('.ev');if(r)openDetail(panelView[r.dataset.i],true)};
+let pendView=[];
+function renderPend(){
+  const p=$('pParada').value.trim();
+  const hechos=new Set(panelData.filter(e=>!p||e.parada===p).map(e=>rutClean(e.rut)));
+  pendView=nomina.filter(x=>!hechos.has(rutClean(x.rut)));
+  $('nPend').textContent=pendView.length;
+  $('pendList').innerHTML=pendView.length?pendView.map((x,i)=>`<div class="row"><div class="info"><div class="t">${esc(x.nombre)}</div><div class="s">${esc(x.rut)} · ${esc(x.cargo)} · ${esc(x.turno)} · ${esc(x.area)}</div></div>${rol==='matriz'?'':`<button class="dark" data-i="${i}">Evaluar</button>`}</div>`).join('')
+    :`<div class="empty">${nomina.length?'Todo el personal de la nómina está evaluado en esta parada.':'Carga la nómina para ver pendientes.'}</div>`;
+}
+$('pendList').onclick=e=>{const b=e.target.closest('button[data-i]');if(!b)return;const x=pendView[b.dataset.i];
+  if(state.editId)resetForm();fillPersona(x);if($('pParada').value)$('parada').value=$('pParada').value;show('evaluar')};
+let nomView=[];
+function renderNom(){
+  const q=$('nq').value.toLowerCase();
+  nomView=nomina.filter(x=>!q||[x.nombre,x.rut,x.cargo,x.area].join(' ').toLowerCase().includes(q));
+  $('nNom').textContent=nomina.length;
+  $('nomList').innerHTML=nomView.length?nomView.map((x,i)=>`<div class="row"><div class="info"><div class="t">${esc(x.nombre)}</div><div class="s">${esc(x.rut)} · ${esc(x.cargo)} · ${esc(x.turno)} · ${esc(x.area)}${x.empresa?' · '+esc(x.empresa):''}</div></div>${rol==='matriz'?'':`<button class="xbtn" data-i="${i}" title="Quitar de la nómina">×</button>`}</div>`).join('')
+    :'<div class="empty">La nómina está vacía. Importa un Excel o agrega trabajadores.</div>';
+}
+$('nomList').onclick=async e=>{const b=e.target.closest('button[data-i]');if(!b)return;const x=nomView[b.dataset.i];
+  if(!confirm('¿Quitar a '+x.nombre+' de la nómina?'))return;
+  try{await api('nominaBorrar',{pin:panelPin,rut:x.rut});await refreshPanel();toast('Quitado de la nómina')}catch(err){toast(err.message)}};
+$('btnAddPers').onclick=()=>{
+  openSheet(`<h3>Agregar trabajador</h3><div class="grid" style="grid-template-columns:1fr 1fr">
+    <div><label class="f">RUT</label><input class="inp" id="aRut"></div><div><label class="f">Nombre y apellido</label><input class="inp" id="aNom"></div>
+    <div><label class="f">Cargo</label><select class="inp" id="aCargo">${$('cargo').innerHTML}</select></div><div><label class="f">Turno</label><select class="inp" id="aTurno">${$('turno').innerHTML}</select></div>
+    <div><label class="f">Área o faena</label><input class="inp" id="aArea"></div><div><label class="f">Empresa</label><input class="inp" id="aEmp"></div></div>
+    <button class="primary" style="margin-top:14px" id="aSave">Agregar a la nómina</button>`);
+  $('aSave').onclick=async()=>{
+    if(!rutValid($('aRut').value)){toast('RUT no válido');return}if(!$('aNom').value.trim()){toast('Falta el nombre');return}
+    const p={rut:rutFormat($('aRut').value),nombre:$('aNom').value.trim(),cargo:$('aCargo').value,turno:$('aTurno').value,area:$('aArea').value.trim(),empresa:$('aEmp').value.trim()};
+    try{await api('nominaGuardar',{pin:panelPin,items:[p]});closeSheet();await refreshPanel();toast('Trabajador agregado')}catch(e){toast(e.message)}};
+};
+
+/* ================== EXCEL (SheetJS) ================== */
+let xlsxP=null;
+function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+function loadXLSX(){if(window.XLSX)return Promise.resolve();
+  if(!xlsxP)xlsxP=loadScript('vendor/xlsx.full.min.js').catch(()=>loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'))
+    .catch(()=>{xlsxP=null;throw new Error('No se pudo cargar el módulo Excel (revisa la conexión)')});return xlsxP}
+function sheetFrom(rows,widths){const ws=XLSX.utils.aoa_to_sheet(rows);if(widths)ws['!cols']=widths.map(w=>({wch:w}));return ws}
+$('btnPlantilla').onclick=async()=>{try{await loadXLSX();const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFrom([['RUT','Nombre','Cargo','Turno','Área','Empresa'],['12.345.678-5','Nombre Apellido','Operador hidrojet','Turno A','Chancado','']],[14,30,24,10,18,20]),'Nómina');
+  XLSX.writeFile(wb,'plantilla_nomina_parada.xlsx')}catch(e){toast(e.message)}};
+$('btnImport').onclick=()=>$('fileNom').click();
+$('fileNom').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{await loadXLSX();const wb=XLSX.read(await f.arrayBuffer());const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    const hi=rows.findIndex(r=>r.some(c=>/^\s*rut\s*$/i.test(String(c))));if(hi<0)throw new Error('No encontré la columna RUT');
+    const H=rows[hi].map(h=>String(h).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim());
+    const col=(...names)=>H.findIndex(h=>names.some(n=>h===n||h.startsWith(n)));
+    const ix={rut:col('rut'),nombre:col('nombre','trabajador'),cargo:col('cargo','funcion'),turno:col('turno'),area:col('area','faena'),empresa:col('empresa')};
+    const ok=[],bad=[];
+    rows.slice(hi+1).forEach(r=>{const g=k=>ix[k]>=0?String(r[ix[k]]).trim():'';const rut=g('rut');if(!rut&&!g('nombre'))return;
+      if(rutValid(rut))ok.push({rut:rutFormat(rut),nombre:g('nombre'),cargo:g('cargo'),turno:g('turno'),area:g('area'),empresa:g('empresa')});else bad.push(rut||g('nombre'))});
+    if(!ok.length)throw new Error('No hay filas con RUT válido');
+    await api('nominaGuardar',{pin:panelPin,items:ok});await refreshPanel();
+    openSheet(`<h3>Nómina importada</h3><p>${ok.length} trabajadores cargados o actualizados.</p>${bad.length?`<p style="color:var(--red)">${bad.length} filas con RUT no válido (omitidas): ${bad.slice(0,10).map(esc).join(', ')}${bad.length>10?'…':''}</p>`:''}<button class="ghost" style="width:100%" onclick="closeSheet()">Cerrar</button>`);
+  }catch(err){toast('Error al importar: '+err.message,4000)}
+};
+$('btnXlsx').onclick=async()=>{
+  try{await loadXLSX();const d=panelView,wb=XLSX.utils.book_new(),s=stats(d);
+    const titulo=[['REGISTRO DE EVALUACIÓN DE PERSONAL – PARADA DE PLANTA (ASEO INDUSTRIAL)'],[`${EMPRESA} · Código ${DOC_CODIGO} · Versión ${DOC_VERSION} · Emitido ${fmtFecha(hoy())}`],[]];
+    XLSX.utils.book_append_sheet(wb,sheetFrom([...titulo,
+      ['Indicador','Valor'],['Evaluaciones',s.n],['Promedio general %',s.avg],['Destacados',s.dest],['Competentes',s.comp],['Requiere refuerzo',s.ref],['No recomendados',s.norec],['Alertas de seguridad',s.alertas],[],
+      ['Área evaluada','Promedio %'],...CATS.map(c=>[c.name,s.cats[c.id]]),[],
+      ['Escala: 1 Deficiente · 2 Insuficiente · 3 Aceptable · 4 Bueno · 5 Excelente. Ponderación: Seguridad 30%, Técnicas 30%, Desempeño 25%, Conducta 15%.'],
+      ['Clasificación: ≥85% Destacado · 70–84% Competente · 55–69% Requiere refuerzo · <55% No recomendado. Nota 1–2 en Seguridad = alerta y máximo «Requiere refuerzo».']],[34,14]),'Resumen');
+    const crit=CATS.flatMap(c=>c.items.map(it=>critKey(c,it)));
+    const head=['N°','Folio','Fecha','Parada','Evaluador','RUT','Nombre','Cargo','Turno','Área','Empresa','Puntaje %','Clasificación','Recomienda','Alerta seguridad','Seguridad %','Técnicas %','Desempeño %','Conducta %','Acreditaciones','Fortalezas','A mejorar','Modificado por',...crit];
+    const body=d.map((e,i)=>[i+1,e.id,fmtFecha(e.fecha),e.parada,e.evaluador,e.rut,e.nombre,e.cargo,e.turno,e.area,e.empresa,num(e.puntaje),e.clase,e.recom,isAlerta(e)?'SÍ':'NO',num(e.seg),num(e.tec),num(e.des),num(e.con),acredList(e).join(', '),e.fortalezas,e.mejoras,e.modificadoPor||'',...crit.map(k=>{const v=(e.notas||{})[k];return v==='NA'?'N/A':v===''||v==null?'':+v})]);
+    const ws=sheetFrom([...titulo,head,...body],[5,14,11,22,20,13,28,22,9,16,16,10,18,16,10,10,10,11,10,34,30,30,16,...crit.map(()=>14)]);
+    ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:3,c:0},e:{r:3+body.length,c:head.length-1}})};
+    XLSX.utils.book_append_sheet(wb,ws,'Evaluaciones');
+    const p=$('pParada').value.trim();
+    XLSX.utils.book_append_sheet(wb,sheetFrom([[`Pendientes por evaluar${p?' – '+p:''}`],[],['RUT','Nombre','Cargo','Turno','Área','Empresa'],...pendView.map(x=>[x.rut,x.nombre,x.cargo,x.turno,x.area,x.empresa])],[14,30,22,10,18,18]),'Pendientes');
+    XLSX.utils.book_append_sheet(wb,sheetFrom([['RUT','Nombre','Cargo','Turno','Área','Empresa'],...nomina.map(x=>[x.rut,x.nombre,x.cargo,x.turno,x.area,x.empresa])],[14,30,22,10,18,18]),'Nómina');
+    XLSX.writeFile(wb,'evaluaciones_parada_'+hoy()+'.xlsx');
+  }catch(e){toast(e.message,4000)}
+};
+
+/* ================== IMPRESIÓN / PDF (formato prevención) ================== */
+function docHead(titulo){return `<table class="doc"><tr><td style="width:24%;font-weight:700;font-size:13px">${esc(EMPRESA)}<br><span style="font-weight:400;font-size:9.5px">Prevención de Riesgos</span></td>
+  <td class="tit">${titulo}</td><td style="width:24%;font-size:9.5px">Código: ${DOC_CODIGO}<br>Versión: ${DOC_VERSION}<br>Fecha emisión: ${fmtFecha(hoy())}</td></tr></table>`}
+function fichaHtml(e){
+  const ac=acredList(e),notas=e.notas||{};
+  return `<div class="pb">${docHead('REGISTRO DE EVALUACIÓN DE DESEMPEÑO Y COMPETENCIAS<br>PERSONAL DE ASEO INDUSTRIAL – PARADA DE PLANTA')}
+  <div class="sec">1. Identificación</div>
+  <table><tr><th>Trabajador</th><td>${esc(e.nombre)}</td><th>RUT</th><td>${esc(e.rut)}</td></tr>
+  <tr><th>Cargo</th><td>${esc(e.cargo)}</td><th>Turno</th><td>${esc(e.turno)}</td></tr>
+  <tr><th>Área / faena</th><td>${esc(e.area)}</td><th>Empresa</th><td>${esc(e.empresa||EMPRESA)}</td></tr>
+  <tr><th>Parada</th><td>${esc(e.parada)}</td><th>Fecha evaluación</th><td>${esc(fmtFecha(e.fecha))}</td></tr>
+  <tr><th>Evaluador</th><td>${esc(e.evaluador)}</td><th>Folio</th><td>${esc(e.id||'')}</td></tr></table>
+  <div class="sec">2. Evaluación por criterio (1 Deficiente · 2 Insuficiente · 3 Aceptable · 4 Bueno · 5 Excelente · N/A No aplica)</div>
+  ${CATS.map(c=>`<table><tr><th style="width:4%">N°</th><th>${c.name.toUpperCase()} (pondera ${c.peso}%)</th><th style="width:40%">Descripción</th><th class="c" style="width:9%">Nota</th></tr>
+    ${c.items.map((it,i)=>{const v=notas[critKey(c,it)];return `<tr><td class="c">${i+1}</td><td>${it[0]}</td><td>${it[1]}</td><td class="c"><b>${v==='NA'?'N/A':v===''||v==null?'–':v}</b></td></tr>`}).join('')}
+    <tr><th colspan="3" style="text-align:right">Logro del área</th><th class="c">${num(e[c.id])==null?'–':e[c.id]+'%'}</th></tr></table>`).join('')}
+  <div class="sec">3. Acreditaciones / habilidades verificadas</div>
+  <table><tr>${ACRED.map((a,i)=>`${i%2===0&&i?'</tr><tr>':''}<td style="width:6%" class="c">${ac.includes(a[0])?'☒':'☐'}</td><td>${a[0]} (${a[1]})</td>`).join('')}</tr></table>
+  <div class="sec">4. Resultado</div>
+  <table><tr><th>Puntaje final</th><td><b>${e.puntaje}%</b></td><th>Clasificación</th><td><b>${esc(e.clase)}</b></td></tr>
+  <tr><th>Alerta de seguridad</th><td>${isAlerta(e)?'<b>SÍ</b> – requiere refuerzo inmediato':'NO'}</td><th>Recomendado próxima parada</th><td><b>${esc(e.recom)}</b></td></tr>
+  <tr><th>Fortalezas</th><td colspan="3">${esc(e.fortalezas||'–')}</td></tr>
+  <tr><th>Aspectos a mejorar / capacitación</th><td colspan="3">${esc(e.mejoras||'–')}</td></tr>
+  ${e.modificado?`<tr><th>Modificación</th><td colspan="3">${esc(fmtFecha(String(e.modificado).slice(0,10)))} por ${esc(e.modificadoPor||'')}</td></tr>`:''}</table>
+  <div style="font-size:9px;margin:2px 0 6px">Criterio: ≥85% Destacado · 70–84% Competente · 55–69% Requiere refuerzo · &lt;55% No recomendado. Nota 1–2 en un criterio de Seguridad genera alerta y limita la clasificación a «Requiere refuerzo».</div>
+  <div class="sec">5. Toma de conocimiento y firmas</div>
+  <table class="firmas"><tr><td>Trabajador evaluado<br>${esc(e.nombre)}</td><td>Evaluador / Supervisor<br>${esc(e.evaluador)}</td><td>Prevención de Riesgos</td><td>Jefe de área / Administrador</td></tr></table></div>`;
+}
+function informeHtml(d,titulo){
+  const s=stats(d),rows=[...d].sort((a,b)=>(+b.puntaje)-(+a.puntaje)),al=rows.filter(isAlerta),norec=rows.filter(e=>e.clase==='No recomendado'||e.recom==='No');
+  return `${docHead('INFORME A LÍNEA DE MANDO<br>EVALUACIÓN DE PERSONAL – PARADA DE PLANTA')}
+  <table><tr><th>Parada</th><td>${esc(titulo||'Todas')}</td><th>Fecha informe</th><td>${fmtFecha(hoy())}</td></tr></table>
+  <div class="sec">1. Resumen</div>
+  <table><tr><th>Evaluados</th><th>Promedio</th><th>Destacados</th><th>Competentes</th><th>Requiere refuerzo</th><th>No recomendados</th><th>Alertas seguridad</th><th>Pendientes</th></tr>
+  <tr class="c"><td class="c">${s.n}</td><td class="c">${s.avg==null?'–':s.avg+'%'}</td><td class="c">${s.dest}</td><td class="c">${s.comp}</td><td class="c">${s.ref}</td><td class="c">${s.norec}</td><td class="c">${s.alertas}</td><td class="c">${pendView.length}</td></tr></table>
+  <table><tr>${CATS.map(c=>`<th>${c.name}</th>`).join('')}</tr><tr>${CATS.map(c=>`<td class="c">${s.cats[c.id]==null?'–':s.cats[c.id]+'%'}</td>`).join('')}</tr></table>
+  <div class="sec">2. Alertas de seguridad (acción inmediata)</div>
+  ${al.length?`<table><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Seguridad</th><th>Aspectos a mejorar</th><th>Evaluador</th></tr>${al.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td class="c">${e.seg}%</td><td>${esc(e.mejoras||'')}</td><td>${esc(e.evaluador)}</td></tr>`).join('')}</table>`:'<p>Sin alertas de seguridad.</p>'}
+  <div class="sec">3. No recomendados para próxima parada</div>
+  ${norec.length?`<table><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Puntaje</th><th>Motivo / a mejorar</th></tr>${norec.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td class="c">${e.puntaje}%</td><td>${esc(e.mejoras||'')}</td></tr>`).join('')}</table>`:'<p>Ninguno.</p>'}
+  <div class="sec">4. Ranking del personal evaluado</div>
+  <table><tr><th>N°</th><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Turno</th><th>Seg.</th><th>Téc.</th><th>Des.</th><th>Con.</th><th>Total</th><th>Clasificación</th><th>Recomienda</th></tr>
+  ${rows.map((e,i)=>`<tr><td class="c">${i+1}</td><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td>${esc(e.turno)}</td><td class="c">${e.seg??'–'}</td><td class="c">${e.tec??'–'}</td><td class="c">${e.des??'–'}</td><td class="c">${e.con??'–'}</td><td class="c"><b>${e.puntaje}%</b></td><td>${esc(e.clase)}</td><td>${esc(e.recom)}</td></tr>`).join('')}</table>
+  <div class="sec">5. Firmas</div>
+  <table class="firmas"><tr><td>Supervisor / Capataz</td><td>Prevención de Riesgos</td><td>Jefe de área</td><td>Administrador de contrato</td></tr></table>`;
+}
+function printDocs(list){$('print').innerHTML=list.map(fichaHtml).join('');window.print()}
+$('btnInforme').onclick=()=>{
+  const p=$('fParada').value;
+  openSheet(`<h3>Informe línea de mando</h3><p style="margin:0 0 12px;color:var(--muted)">Incluye las ${panelView.length} evaluaciones del filtro actual${p?' ('+esc(p)+')':''}: resumen, alertas de seguridad, no recomendados y ranking.</p>
+    <div class="btns"><button class="dark" id="iPdf">Descargar informe PDF</button><button class="ghost" id="iFichas">Descargar todas las fichas PDF</button>${rol==='matriz'?'':'<button class="dark" id="iMail">Enviar por correo a línea de mando</button>'}</div>`);
+  $('iPdf').onclick=()=>{$('print').innerHTML=informeHtml(panelView,p);window.print()};
+  $('iFichas').onclick=()=>{if(!panelView.length){toast('No hay evaluaciones');return}printDocs(panelView)};
+  if($('iMail'))$('iMail').onclick=async()=>{$('iMail').disabled=true;
+    try{const j=await api('informe',{pin:panelPin,parada:p});toast(j.enviado?'Informe enviado a: '+(j.destinatarios||[]).join(', '):j.motivo,5000)}catch(e){toast(e.message)}
+    $('iMail').disabled=false};
+};
+
+/* ================== ROLES ================== */
+// supervisor: todo · matriz (Casa Matriz / Reclutamiento): ver, filtrar y descargar; sin modificar.
+function applyRol(){const m=rol==='matriz';
+  document.querySelectorAll('[data-sup]').forEach(e=>e.classList.toggle('hidden',m));
+  $('panelTit').textContent=m?'Casa Matriz':'Panel supervisor';
+  $('btnInforme').textContent=m?'Informe / PDF':'Informe línea de mando'}
+
+/* ================== NAVEGACIÓN ================== */
+function show(v){
+  $('vEvaluar').classList.toggle('hidden',v!=='evaluar');$('vMis').classList.toggle('hidden',v!=='mis');$('vPanel').classList.toggle('hidden',v!=='panel');
+  $('nEvaluar').classList.toggle('on',v==='evaluar');$('nMis').classList.toggle('on',v==='mis');
+  $('htitle').textContent=v==='panel'?(rol==='matriz'?'Casa Matriz':'Panel supervisor'):'Evaluación de personal';
+  $('btnSup').textContent=panelPin?'Panel'+(supNombre?' · '+supNombre.split(' ')[0]:''):'Ingresar';
+  window.scrollTo(0,0);
+}
+$('nEvaluar').onclick=()=>show('evaluar');$('nMis').onclick=()=>show('mis');
+
+/* ================== INSTALAR (PWA) ================== */
+let deferred=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!ls.get('evp_noinst',false))$('install').style.display='flex'});
+$('btnInstall').onclick=async()=>{if(deferred){deferred.prompt();await deferred.userChoice;deferred=null}$('install').style.display='none'};
+$('btnInstallX').onclick=()=>{$('install').style.display='none';ls.set('evp_noinst',true)};
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(isIOS&&!standalone&&!ls.get('evp_noinst',false)){$('install').querySelector('span').textContent='Para instalar: toca Compartir y luego «Agregar a inicio».';$('btnInstall').classList.add('hidden');$('install').style.display='flex'}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+if(!API_URL)$('demoBanner').classList.remove('hidden');
+renderAll();loadNomina();
+</script>
+</body>
+</html>

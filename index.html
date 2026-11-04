@@ -218,6 +218,12 @@ nav svg{width:22px;height:22px}
       </div>
     </div>
 
+    <div class="card">
+      <h2>Eventos durante la parada</h2>
+      <div class="list" id="eventos"></div>
+      <p class="hint">Solo los ven los supervisores y Casa Matriz. No cambian el puntaje.</p>
+    </div>
+
     <button class="primary" id="btnEnviar">Enviar evaluación</button>
   </section>
 
@@ -309,7 +315,7 @@ const DOC_VERSION = '01';
 const CATS = [
   {id:'seg', name:'Seguridad', peso:30, items:[
     ['Uso correcto de EPP','Casco, lentes, guantes, protección respiratoria y auditiva según la tarea'],
-    ['ART / AST y charla de inicio','Participa y aplica el análisis de riesgo antes del trabajo'],
+    ['Participación en RITUS','Asiste y participa activamente en la charla de inicio y el análisis de riesgo (ART / AST)'],
     ['Bloqueo y tarjeteo (LOTO)','Aplica aislación de energías y verifica energía cero'],
     ['Espacio confinado y altura','Respeta permisos, vigía, medición de gases y arnés'],
     ['Orden y segregación del área','Delimita el área, mantiene accesos y vías despejadas'],
@@ -346,10 +352,12 @@ const ACRED = [
   ['Manejo de sustancias peligrosas','HAZMAT'],['Inducción del mandante','Vigente'],
 ];
 const critKey=(c,it)=>c.name+' · '+it[0];
+const EVENTOS = [['renuncia','Renuncia voluntaria'],['policlinico','Visita al policlínico'],['bajada','Bajada anticipada']];
+const eventosDe=e=>{const x=(e.notas||{}).__eventos||{};return EVENTOS.filter(([k])=>x[k]&&x[k].si).map(([k,n])=>({k,n,det:x[k].det||''}))};
 
 /* ================== UTILIDADES ================== */
 const $ = id => document.getElementById(id);
-let state = {cat:'seg', notas:{}, acred:{}, recom:'', editId:null, editOrig:null};
+let state = {cat:'seg', notas:{}, acred:{}, recom:'', eventos:{}, editId:null, editOrig:null};
 let panelData=[], panelPin='', supNombre='', rol='', nomina=[], ptab='ev';
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toast(m,ms=2800){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',ms)}
@@ -407,7 +415,15 @@ function renderRes(){
   $('rBars').innerHTML=barsHtml(r.cats);
   $('rAlert').classList.toggle('hidden',!r.alerta);
 }
-function renderAll(){renderChips();renderCrit();renderRes();
+function renderEventos(){
+  $('eventos').innerHTML=EVENTOS.map(([k,n])=>{const v=state.eventos[k]||{};return `<div class="row"><div class="info"><div class="t">${n}</div>
+    ${v.si?`<input class="inp" data-det="${k}" placeholder="Detalle: fecha, motivo…" value="${esc(v.det||'')}" style="margin-top:8px">`:''}</div>
+    <div class="seg" style="flex:0 0 auto"><button data-ev="${k}" data-v="0" class="${v.si?'':'on'}" style="flex:0 0 64px">No</button><button data-ev="${k}" data-v="1" class="${v.si?'on':''}" style="flex:0 0 64px">Sí</button></div></div>`}).join('');
+}
+$('eventos').addEventListener('click',e=>{const b=e.target.closest('button[data-ev]');if(!b)return;const k=b.dataset.ev;
+  state.eventos[k]={...(state.eventos[k]||{}),si:b.dataset.v==='1'};renderEventos();const i=document.querySelector(`[data-det="${k}"]`);if(i)i.focus()});
+$('eventos').addEventListener('input',e=>{const k=e.target.dataset.det;if(k)state.eventos[k]={...state.eventos[k],det:e.target.value}});
+function renderAll(){renderChips();renderCrit();renderRes();renderEventos();
   document.querySelectorAll('#recom button').forEach(b=>b.classList.toggle('on',b.dataset.v===state.recom));
   $('editBanner').classList.toggle('hidden',!state.editId);
   $('btnEnviar').textContent=state.editId?'Guardar cambios':'Enviar evaluación';
@@ -478,7 +494,9 @@ function buildEv(){
     rut:rutFormat($('rut').value),nombre:$('nombre').value.trim(),cargo:$('cargo').value,turno:$('turno').value,area:$('area').value.trim(),empresa:$('empresa').value.trim(),
     puntaje:r.pct,clase:r.clase,alerta:r.alerta,recom:state.recom,seg:r.cats.seg,tec:r.cats.tec,des:r.cats.des,con:r.cats.con,
     acred:ACRED.filter((_,i)=>state.acred[i]).map(a=>a[0]),fortalezas:$('fort').value.trim(),mejoras:$('mejora').value.trim(),
-    notas:Object.fromEntries(CATS.flatMap(c=>c.items.map((it,i)=>[critKey(c,it),state.notas[c.id+i]??'']))),creado:new Date().toISOString()};
+    notas:{...Object.fromEntries(CATS.flatMap(c=>c.items.map((it,i)=>[critKey(c,it),state.notas[c.id+i]??'']))),
+      __eventos:Object.fromEntries(EVENTOS.map(([k])=>[k,{si:!!(state.eventos[k]&&state.eventos[k].si),det:(state.eventos[k]&&state.eventos[k].si&&state.eventos[k].det)||''}]))},
+    creado:new Date().toISOString()};
 }
 $('btnEnviar').onclick=async()=>{
   const req=[['evNombre','Nombre del evaluador'],['parada','Parada'],['rut','RUT'],['nombre','Nombre del trabajador'],['cargo','Cargo']];
@@ -509,10 +527,10 @@ $('btnEnviar').onclick=async()=>{
 };
 function resetForm(){['rut','nombre','area','empresa','fort','mejora'].forEach(id=>$(id).value='');$('cargo').value='';$('fecha').value=hoy();
   $('evNombre').value=ls.get('evp_evNombre','');$('parada').value=ls.get('evp_parada','');
-  state={cat:'seg',notas:{},acred:{},recom:'',editId:null,editOrig:null};renderAll();window.scrollTo({top:0,behavior:'smooth'})}
+  state={cat:'seg',notas:{},acred:{},recom:'',eventos:{},editId:null,editOrig:null};renderAll();window.scrollTo({top:0,behavior:'smooth'})}
 $('btnCancelEdit').onclick=()=>{resetForm();show('panel')};
 function loadIntoForm(e){
-  state={cat:'seg',notas:{},acred:{},recom:e.recom||'',editId:e.id,editOrig:e};
+  state={cat:'seg',notas:{},acred:{},recom:e.recom||'',eventos:JSON.parse(JSON.stringify((e.notas||{}).__eventos||{})),editId:e.id,editOrig:e};
   CATS.forEach(c=>c.items.forEach((it,i)=>{const v=(e.notas||{})[critKey(c,it)];if(v!==''&&v!=null)state.notas[c.id+i]=v==='NA'?'NA':+v}));
   const ac=acredList(e);ACRED.forEach((a,i)=>{if(ac.includes(a[0]))state.acred[i]=true});
   $('fecha').value=String(e.fecha||'').slice(0,10);$('parada').value=e.parada||'';$('evNombre').value=e.evaluador||'';
@@ -522,28 +540,29 @@ function loadIntoForm(e){
 }
 
 /* ================== DETALLE ================== */
-function detailHtml(e){
-  const ac=acredList(e);
+function detailHtml(e,priv=true){
+  const ac=acredList(e),evs=eventosDe(e);
   return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div class="big" style="padding:10px 16px"><div class="p" style="font-size:34px">${e.puntaje}%</div></div><div>${claseTag(e.clase)}<div style="margin-top:6px;font-size:14px">Recomienda: <b>${esc(e.recom)}</b></div></div></div>
   ${isAlerta(e)?'<div class="alert" style="margin:0 0 12px">Alerta de seguridad</div>':''}
   <div class="bars">${barsHtml({seg:num(e.seg),tec:num(e.tec),des:num(e.des),con:num(e.con)})}</div>
   <dl class="dl" style="margin-top:12px"><dt>Trabajador</dt><dd>${esc(e.nombre)} · ${esc(e.rut)}</dd><dt>Cargo</dt><dd>${esc(e.cargo)}</dd><dt>Turno / área</dt><dd>${esc(e.turno)} · ${esc(e.area||'–')}</dd>
   <dt>Parada</dt><dd>${esc(e.parada)}</dd><dt>Fecha</dt><dd>${esc(fmtFecha(e.fecha))}</dd><dt>Evaluador</dt><dd>${esc(e.evaluador)}</dd>
   ${e.modificado?`<dt>Modificado</dt><dd>${esc(fmtFecha(String(e.modificado).slice(0,10)))} por ${esc(e.modificadoPor||'')}</dd>`:''}
+  ${priv?`<dt>Eventos</dt><dd>${evs.length?evs.map(x=>esc(x.n)+(x.det?' ('+esc(x.det)+')':'')).join(' · '):'Ninguno'}</dd>`:''}
   <dt>Acreditaciones</dt><dd>${ac.length?ac.map(esc).join(', '):'–'}</dd><dt>Fortalezas</dt><dd>${esc(e.fortalezas||'–')}</dd><dt>A mejorar</dt><dd>${esc(e.mejoras||'–')}</dd></dl>`;
 }
 function openSheet(h){$('sheet').innerHTML=h;$('modal').classList.add('open')}
 function closeSheet(){$('modal').classList.remove('open')}
 $('modal').onclick=e=>{if(e.target===$('modal'))closeSheet()};
 function openDetail(e,canEdit){
-  openSheet('<h3>Detalle</h3>'+detailHtml(e)+`<div class="btns" style="margin-top:14px">
-    <button class="ghost" id="dPdf">Descargar ficha PDF</button>${canEdit&&rol!=='matriz'?'<button class="dark" id="dEdit">Modificar</button>':''}<button class="ghost" id="dClose">Cerrar</button></div>`);
-  $('dPdf').onclick=()=>printDocs([e]);$('dClose').onclick=closeSheet;
+  openSheet('<h3>Detalle</h3>'+detailHtml(e,canEdit)+`<div class="btns" style="margin-top:14px">
+    ${canEdit?'<button class="ghost" id="dPdf">Descargar ficha PDF</button>':''}${canEdit&&rol!=='matriz'?'<button class="dark" id="dEdit">Modificar</button>':''}<button class="ghost" id="dClose">Cerrar</button></div>`);
+  if($('dPdf'))$('dPdf').onclick=()=>printDocs([e]);$('dClose').onclick=closeSheet;
   if(canEdit&&$('dEdit'))$('dEdit').onclick=()=>{closeSheet();loadIntoForm(e)};
 }
 
 /* ================== MIS EVALUACIONES ================== */
-function evRow(e,i,rank){return `<div class="ev" data-i="${i}"><div><div class="t">${rank?rank+'. ':''}${esc(e.nombre)}${isAlerta(e)?' <span class="tag r">Alerta</span>':''}</div><div class="s">${esc(e.parada)} · ${esc(fmtFecha(e.fecha))} · ${esc(e.cargo)} · ${esc(e.turno)}</div></div><div class="r"><span class="pct">${e.puntaje}%</span>${claseTag(e.clase)}</div></div>`}
+function evRow(e,i,rank){return `<div class="ev" data-i="${i}"><div><div class="t">${rank?rank+'. ':''}${esc(e.nombre)}${isAlerta(e)?' <span class="tag r">Alerta</span>':''}${panelPin?eventosDe(e).map(x=>` <span class="tag a">${esc(x.n)}</span>`).join(''):''}</div><div class="s">${esc(e.parada)} · ${esc(fmtFecha(e.fecha))} · ${esc(e.cargo)} · ${esc(e.turno)}</div></div><div class="r"><span class="pct">${e.puntaje}%</span>${claseTag(e.clase)}</div></div>`}
 let misData=[];
 $('btnMis').onclick=async()=>{
   const v=$('misRut').value;if(!rutValid(v)){toast('RUT no válido');return}$('misRut').value=rutFormat(v);
@@ -580,7 +599,8 @@ function stats(d){
   const n=d.length,avg=n?Math.round(d.reduce((a,e)=>a+(+e.puntaje||0),0)/n):null;
   const cnt=c=>d.filter(e=>e.clase===c).length;
   const avgCat=id=>{const v=d.map(e=>num(e[id])).filter(x=>x!=null);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null};
-  return {n,avg,dest:cnt('Destacado'),comp:cnt('Competente'),ref:cnt('Requiere refuerzo'),norec:cnt('No recomendado'),alertas:d.filter(isAlerta).length,
+  const evc=k=>d.filter(e=>eventosDe(e).some(x=>x.k===k)).length;
+  return {n,avg,renuncias:evc('renuncia'),policlinico:evc('policlinico'),bajadas:evc('bajada'),dest:cnt('Destacado'),comp:cnt('Competente'),ref:cnt('Requiere refuerzo'),norec:cnt('No recomendado'),alertas:d.filter(isAlerta).length,
     cats:{seg:avgCat('seg'),tec:avgCat('tec'),des:avgCat('des'),con:avgCat('con')}};
 }
 function renderPanel(){
@@ -666,14 +686,14 @@ $('btnXlsx').onclick=async()=>{
   try{await loadXLSX();const d=panelView,wb=XLSX.utils.book_new(),s=stats(d);
     const titulo=[['REGISTRO DE EVALUACIÓN DE PERSONAL – PARADA DE PLANTA (ASEO INDUSTRIAL)'],[`${EMPRESA} · Código ${DOC_CODIGO} · Versión ${DOC_VERSION} · Emitido ${fmtFecha(hoy())}`],[]];
     XLSX.utils.book_append_sheet(wb,sheetFrom([...titulo,
-      ['Indicador','Valor'],['Evaluaciones',s.n],['Promedio general %',s.avg],['Destacados',s.dest],['Competentes',s.comp],['Requiere refuerzo',s.ref],['No recomendados',s.norec],['Alertas de seguridad',s.alertas],[],
+      ['Indicador','Valor'],['Evaluaciones',s.n],['Promedio general %',s.avg],['Destacados',s.dest],['Competentes',s.comp],['Requiere refuerzo',s.ref],['No recomendados',s.norec],['Alertas de seguridad',s.alertas],['Renuncias voluntarias',s.renuncias],['Visitas al policlínico',s.policlinico],['Bajadas anticipadas',s.bajadas],[],
       ['Área evaluada','Promedio %'],...CATS.map(c=>[c.name,s.cats[c.id]]),[],
       ['Escala: 1 Deficiente · 2 Insuficiente · 3 Aceptable · 4 Bueno · 5 Excelente. Ponderación: Seguridad 30%, Técnicas 30%, Desempeño 25%, Conducta 15%.'],
       ['Clasificación: ≥85% Destacado · 70–84% Competente · 55–69% Requiere refuerzo · <55% No recomendado. Nota 1–2 en Seguridad = alerta y máximo «Requiere refuerzo».']],[34,14]),'Resumen');
     const crit=CATS.flatMap(c=>c.items.map(it=>critKey(c,it)));
-    const head=['N°','Folio','Fecha','Parada','Evaluador','RUT','Nombre','Cargo','Turno','Área','Empresa','Puntaje %','Clasificación','Recomienda','Alerta seguridad','Seguridad %','Técnicas %','Desempeño %','Conducta %','Acreditaciones','Fortalezas','A mejorar','Modificado por',...crit];
-    const body=d.map((e,i)=>[i+1,e.id,fmtFecha(e.fecha),e.parada,e.evaluador,e.rut,e.nombre,e.cargo,e.turno,e.area,e.empresa,num(e.puntaje),e.clase,e.recom,isAlerta(e)?'SÍ':'NO',num(e.seg),num(e.tec),num(e.des),num(e.con),acredList(e).join(', '),e.fortalezas,e.mejoras,e.modificadoPor||'',...crit.map(k=>{const v=(e.notas||{})[k];return v==='NA'?'N/A':v===''||v==null?'':+v})]);
-    const ws=sheetFrom([...titulo,head,...body],[5,14,11,22,20,13,28,22,9,16,16,10,18,16,10,10,10,11,10,34,30,30,16,...crit.map(()=>14)]);
+    const head=['N°','Folio','Fecha','Parada','Evaluador','RUT','Nombre','Cargo','Turno','Área','Empresa','Puntaje %','Clasificación','Recomienda','Alerta seguridad','Seguridad %','Técnicas %','Desempeño %','Conducta %','Acreditaciones','Fortalezas','A mejorar','Renuncia voluntaria','Visita policlínico','Bajada anticipada','Detalle eventos','Modificado por',...crit];
+    const body=d.map((e,i)=>[i+1,e.id,fmtFecha(e.fecha),e.parada,e.evaluador,e.rut,e.nombre,e.cargo,e.turno,e.area,e.empresa,num(e.puntaje),e.clase,e.recom,isAlerta(e)?'SÍ':'NO',num(e.seg),num(e.tec),num(e.des),num(e.con),acredList(e).join(', '),e.fortalezas,e.mejoras,...EVENTOS.map(([k])=>eventosDe(e).some(x=>x.k===k)?'SÍ':'NO'),eventosDe(e).filter(x=>x.det).map(x=>x.n+': '+x.det).join(' | '),e.modificadoPor||'',...crit.map(k=>{const v=(e.notas||{})[k];return v==='NA'?'N/A':v===''||v==null?'':+v})]);
+    const ws=sheetFrom([...titulo,head,...body],[5,14,11,22,20,13,28,22,9,16,16,10,18,16,10,10,10,11,10,34,30,30,12,12,12,34,16,...crit.map(()=>14)]);
     ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:3,c:0},e:{r:3+body.length,c:head.length-1}})};
     XLSX.utils.book_append_sheet(wb,ws,'Evaluaciones');
     const p=$('pParada').value.trim();
@@ -701,14 +721,17 @@ function fichaHtml(e){
     <tr><th colspan="3" style="text-align:right">Logro del área</th><th class="c">${num(e[c.id])==null?'–':e[c.id]+'%'}</th></tr></table>`).join('')}
   <div class="sec">3. Acreditaciones / habilidades verificadas</div>
   <table><tr>${ACRED.map((a,i)=>`${i%2===0&&i?'</tr><tr>':''}<td style="width:6%" class="c">${ac.includes(a[0])?'☒':'☐'}</td><td>${a[0]} (${a[1]})</td>`).join('')}</tr></table>
-  <div class="sec">4. Resultado</div>
+  <div class="sec">4. Eventos durante la parada</div>
+  <table><tr>${EVENTOS.map(([k,n])=>{const x=((e.notas||{}).__eventos||{})[k]||{};return `<th>${n}</th><td class="c"><b>${x.si?'SÍ':'NO'}</b></td>`}).join('')}</tr>
+  ${eventosDe(e).filter(x=>x.det).length?`<tr><th>Detalle</th><td colspan="5">${eventosDe(e).filter(x=>x.det).map(x=>esc(x.n)+': '+esc(x.det)).join(' · ')}</td></tr>`:''}</table>
+  <div class="sec">5. Resultado</div>
   <table><tr><th>Puntaje final</th><td><b>${e.puntaje}%</b></td><th>Clasificación</th><td><b>${esc(e.clase)}</b></td></tr>
   <tr><th>Alerta de seguridad</th><td>${isAlerta(e)?'<b>SÍ</b> – requiere refuerzo inmediato':'NO'}</td><th>Recomendado próxima parada</th><td><b>${esc(e.recom)}</b></td></tr>
   <tr><th>Fortalezas</th><td colspan="3">${esc(e.fortalezas||'–')}</td></tr>
   <tr><th>Aspectos a mejorar / capacitación</th><td colspan="3">${esc(e.mejoras||'–')}</td></tr>
   ${e.modificado?`<tr><th>Modificación</th><td colspan="3">${esc(fmtFecha(String(e.modificado).slice(0,10)))} por ${esc(e.modificadoPor||'')}</td></tr>`:''}</table>
   <div style="font-size:9px;margin:2px 0 6px">Criterio: ≥85% Destacado · 70–84% Competente · 55–69% Requiere refuerzo · &lt;55% No recomendado. Nota 1–2 en un criterio de Seguridad genera alerta y limita la clasificación a «Requiere refuerzo».</div>
-  <div class="sec">5. Toma de conocimiento y firmas</div>
+  <div class="sec">6. Toma de conocimiento y firmas</div>
   <table class="firmas"><tr><td>Trabajador evaluado<br>${esc(e.nombre)}</td><td>Evaluador / Supervisor<br>${esc(e.evaluador)}</td><td>Prevención de Riesgos</td><td>Jefe de área / Administrador</td></tr></table></div>`;
 }
 function informeHtml(d,titulo){
@@ -716,17 +739,19 @@ function informeHtml(d,titulo){
   return `${docHead('INFORME A LÍNEA DE MANDO<br>EVALUACIÓN DE PERSONAL – PARADA DE PLANTA')}
   <table><tr><th>Parada</th><td>${esc(titulo||'Todas')}</td><th>Fecha informe</th><td>${fmtFecha(hoy())}</td></tr></table>
   <div class="sec">1. Resumen</div>
-  <table><tr><th>Evaluados</th><th>Promedio</th><th>Destacados</th><th>Competentes</th><th>Requiere refuerzo</th><th>No recomendados</th><th>Alertas seguridad</th><th>Pendientes</th></tr>
-  <tr class="c"><td class="c">${s.n}</td><td class="c">${s.avg==null?'–':s.avg+'%'}</td><td class="c">${s.dest}</td><td class="c">${s.comp}</td><td class="c">${s.ref}</td><td class="c">${s.norec}</td><td class="c">${s.alertas}</td><td class="c">${pendView.length}</td></tr></table>
+  <table><tr><th>Evaluados</th><th>Promedio</th><th>Destacados</th><th>Competentes</th><th>Requiere refuerzo</th><th>No recomendados</th><th>Alertas seguridad</th><th>Renuncias</th><th>Policlínico</th><th>Bajadas anticipadas</th><th>Pendientes</th></tr>
+  <tr class="c"><td class="c">${s.n}</td><td class="c">${s.avg==null?'–':s.avg+'%'}</td><td class="c">${s.dest}</td><td class="c">${s.comp}</td><td class="c">${s.ref}</td><td class="c">${s.norec}</td><td class="c">${s.alertas}</td><td class="c">${s.renuncias}</td><td class="c">${s.policlinico}</td><td class="c">${s.bajadas}</td><td class="c">${pendView.length}</td></tr></table>
   <table><tr>${CATS.map(c=>`<th>${c.name}</th>`).join('')}</tr><tr>${CATS.map(c=>`<td class="c">${s.cats[c.id]==null?'–':s.cats[c.id]+'%'}</td>`).join('')}</tr></table>
   <div class="sec">2. Alertas de seguridad (acción inmediata)</div>
   ${al.length?`<table><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Seguridad</th><th>Aspectos a mejorar</th><th>Evaluador</th></tr>${al.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td class="c">${e.seg}%</td><td>${esc(e.mejoras||'')}</td><td>${esc(e.evaluador)}</td></tr>`).join('')}</table>`:'<p>Sin alertas de seguridad.</p>'}
   <div class="sec">3. No recomendados para próxima parada</div>
   ${norec.length?`<table><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Puntaje</th><th>Motivo / a mejorar</th></tr>${norec.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td class="c">${e.puntaje}%</td><td>${esc(e.mejoras||'')}</td></tr>`).join('')}</table>`:'<p>Ninguno.</p>'}
-  <div class="sec">4. Ranking del personal evaluado</div>
+  <div class="sec">4. Eventos: renuncias, policlínico y bajadas anticipadas</div>
+  ${(()=>{const ev=rows.filter(e=>eventosDe(e).length);return ev.length?`<table><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Eventos</th></tr>${ev.map(e=>`<tr><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td>${eventosDe(e).map(x=>esc(x.n)+(x.det?' ('+esc(x.det)+')':'')).join(' · ')}</td></tr>`).join('')}</table>`:'<p>Sin eventos registrados.</p>'})()}
+  <div class="sec">5. Ranking del personal evaluado</div>
   <table><tr><th>N°</th><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Turno</th><th>Seg.</th><th>Téc.</th><th>Des.</th><th>Con.</th><th>Total</th><th>Clasificación</th><th>Recomienda</th></tr>
   ${rows.map((e,i)=>`<tr><td class="c">${i+1}</td><td>${esc(e.nombre)}</td><td>${esc(e.rut)}</td><td>${esc(e.cargo)}</td><td>${esc(e.turno)}</td><td class="c">${e.seg??'–'}</td><td class="c">${e.tec??'–'}</td><td class="c">${e.des??'–'}</td><td class="c">${e.con??'–'}</td><td class="c"><b>${e.puntaje}%</b></td><td>${esc(e.clase)}</td><td>${esc(e.recom)}</td></tr>`).join('')}</table>
-  <div class="sec">5. Firmas</div>
+  <div class="sec">6. Firmas</div>
   <table class="firmas"><tr><td>Supervisor / Capataz</td><td>Prevención de Riesgos</td><td>Jefe de área</td><td>Administrador de contrato</td></tr></table>`;
 }
 function printDocs(list){$('print').innerHTML=list.map(fichaHtml).join('');window.print()}
